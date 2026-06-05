@@ -21,7 +21,7 @@ class AnalysisService {
       const insights = insightGenerator.generateInsights(data, scores);
 
       // 3. Önerileri üret
-      const recommendations = recommendationEngine.generate(data, scores, insights);
+      const recommendations = recommendationEngine.generateRecommendations(scores, data);
 
       // 4. Sonuç objesini formatla
       return {
