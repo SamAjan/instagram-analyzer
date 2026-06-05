@@ -1,0 +1,21 @@
+{
+  "name": "instagram-analyzer",
+  "version": "1.0.0",
+  "description": "Premium Instagram Analytics Platform — Profesyonel hesap analiz sistemi",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && node server.js",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
