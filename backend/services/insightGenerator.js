@@ -17,54 +17,57 @@
 const { generateId, calculatePercentage } = require('../utils/helpers');
 
 /**
- * Generate insights for the given input data.
- * @param {object} data — validated input metrics
+ * Generate insights for the given enriched input data.
+ * @param {object} data — enriched input metrics (with calculated rates)
  * @returns {Array<object>} sorted insights (highest priority first)
  */
 function generateInsights(data) {
   const {
     username,
     niche,
+    followerCount,
     followerGrowth,
     totalViews,
     topVideoViews,
     avgReelsViews,
-    bestFollowerVideo,
-    last14DaysChange,
-    engagementRate,
     weeklyContent,
+    avgLikes,
+    avgComments,
+    avgShares,
+    avgSaves,
+    engagementRate,
     saveRate,
     shareRate,
+    followerGrowthRate,
+    viralRatio,
   } = data;
 
   const conversionRate = calculatePercentage(followerGrowth, totalViews);
-  const viralRatio = avgReelsViews > 0 ? topVideoViews / avgReelsViews : 1;
-  const alignmentRatio = topVideoViews > 0 ? bestFollowerVideo / topVideoViews : 0;
 
   const insights = [];
 
   // ─── 1. Niş Dışı Viral İçerik Uyarısı ──────────────────────────────
-  if (topVideoViews > avgReelsViews * 5 && followerGrowth < totalViews * 0.005) {
+  if (viralRatio > 5 && conversionRate < 0.5) {
     insights.push({
       id: generateId(),
       type: 'warning',
       icon: '⚠️',
       title: 'Niş Dışı Viral İçerik Uyarısı',
       description:
-        'Tutan içeriğiniz niş dışı olabilir. Algoritma hesabınızı yanlış kitleye taşımış olabilir. Bu durum kısa vadede izlenme getirirken uzun vadede hesap performansını düşürebilir.',
+        'En çok izlenen videonuz ortalamanızın çok üstünde ama takipçiye dönüşmüyor. Bu, içeriğin niş dışında viral olduğuna işaret eder. Algoritma hesabınızı yanlış kitleye taşımış olabilir.',
       priority: 9,
     });
   }
 
-  // ─── 2. Değerli İçerik, Düşük Keşfet Performansı ───────────────────
-  if (saveRate > 3 && last14DaysChange < 0) {
+  // ─── 2. Değerli İçerik, Düşük Keşfet ───────────────────────────────
+  if (saveRate > 3 && followerGrowthRate < 2) {
     insights.push({
       id: generateId(),
       type: 'warning',
       icon: '🔍',
       title: 'Değerli İçerik, Düşük Keşfet Performansı',
       description:
-        'İçerikleriniz değerli bulunuyor ancak ilk izlenim gücü düşük olabilir. Hook (giriş) stratejinizi güçlendirmeniz önerilir.',
+        'İçerikleriniz kaydediliyor yani değerli bulunuyor, ama büyüme yavaş. Hook (giriş kancası) stratejinizi güçlendirin — ilk 1 saniyede dikkat çekin. Güçlü bir hook, keşfet sayfasına girmenin anahtarıdır.',
       priority: 8,
     });
   }
@@ -77,7 +80,7 @@ function generateInsights(data) {
       icon: '🚀',
       title: 'Güçlü Viral Yayılım Potansiyeli',
       description:
-        'İçerikleriniz viral yayılım potansiyeli taşıyor. Paylaşım oranınız ortalamanın üzerinde — bu, algoritmanın içeriklerinizi daha geniş kitlelere taşıması için güçlü bir sinyal.',
+        `İçerikleriniz ortalama ${avgShares} paylaşım alıyor. Bu, algoritmanın içeriklerinizi daha geniş kitlelere taşıması için güçlü bir sinyal. Paylaşılabilir formatları (bilgi grafikleri, "arkadaşını etiketle" içerikleri) artırın.`,
       priority: 7,
     });
   }
@@ -90,33 +93,33 @@ function generateInsights(data) {
       icon: '📉',
       title: 'Düşük İçerik Üretim Frekansı',
       description:
-        'Algoritma hesabınızı aktif üretici olarak görmüyor olabilir. Haftada minimum 4-5 içerik paylaşmanız önerilir.',
+        `Haftada sadece ${weeklyContent} içerik paylaşıyorsunuz. Algoritma sizi aktif üretici olarak görmüyor olabilir. Haftada minimum 4-5 içerik paylaşmanız önerilir. Batch üretim (toplu çekim) yaparak bunu kolayca sağlayabilirsiniz.`,
       priority: 9,
     });
   }
 
-  // ─── 5. Algoritma Performans Düşüşü ────────────────────────────────
-  if (last14DaysChange < -15) {
+  // ─── 5. Düşük Büyüme Uyarısı ──────────────────────────────────────
+  if (followerGrowthRate < -1) {
     insights.push({
       id: generateId(),
       type: 'critical',
       icon: '🔻',
-      title: 'Algoritma Performans Düşüşü',
+      title: 'Takipçi Kaybı Tespit Edildi',
       description:
-        'Son dönemde içerik yapınız algoritma beklentileriyle uyuşmuyor olabilir. Format, zamanlama veya konu değişikliği düşünülmeli.',
+        'Son 30 günde takipçi kaybediyorsunuz. Bu, içerik stratejinizin veya paylaşım sıklığınızın takipçi beklentileriyle uyuşmadığına işaret edebilir. İçerik formatınızı, konularınızı ve paylaşım zamanlamanızı gözden geçirin.',
       priority: 10,
     });
   }
 
   // ─── 6. Düşük Takipçi Dönüşüm Oranı ───────────────────────────────
-  if (conversionRate < 0.3) {
+  if (conversionRate < 0.3 && totalViews > 5000) {
     insights.push({
       id: generateId(),
       type: 'warning',
       icon: '👥',
       title: 'Düşük Takipçi Dönüşüm Oranı',
       description:
-        'İzlenme alıyor olsanız bile içerikleriniz takipçiye dönüşmüyor. CTA (takip çağrısı) stratejinizi ve profil optimizasyonunuzu gözden geçirin.',
+        'İzlenme alıyorsunuz ama takipçiye dönüşmüyor. Profil bio\'nuzu optimize edin, her videoda net bir CTA (takip çağrısı) kullanın. "Daha fazlası için takip et" gibi basit ama etkili çağrılar ekleyin.',
       priority: 8,
     });
   }
@@ -129,20 +132,20 @@ function generateInsights(data) {
       icon: '💪',
       title: 'Güçlü Topluluk Bağlılığı',
       description:
-        'Etkileşim oranınız sektör ortalamasının çok üzerinde. Topluluğunuz içeriklerinize aktif olarak katılım gösteriyor.',
+        `Etkileşim oranınız %${engagementRate} — sektör ortalaması olan %1-3'ün çok üzerinde. Topluluğunuz size bağlı ve içeriklerinize aktif katılım gösteriyor. Bu kitleyi korumak için yorumlara cevap verin ve hikaye etkileşimleri yapın.`,
       priority: 6,
     });
   }
 
   // ─── 8. Ghost Follower Uyarısı ──────────────────────────────────────
-  if (engagementRate < 1) {
+  if (engagementRate < 1 && followerCount > 1000) {
     insights.push({
       id: generateId(),
       type: 'critical',
       icon: '👻',
       title: 'Ghost Follower Uyarısı',
       description:
-        'Etkileşim oranınız oldukça düşük. Hesabınızda aktif olmayan (ghost) takipçi oranı yüksek olabilir. Bu durum algoritma performansınızı olumsuz etkiler.',
+        `Etkileşim oranınız %${engagementRate} — bu çok düşük. ${followerCount.toLocaleString('tr-TR')} takipçiniz var ama çoğu aktif değil. Ghost takipçiler algoritma performansınızı düşürür. Hikaye anketleri ve soru kutuları ile aktif kitleyi belirleyin.`,
       priority: 9,
     });
   }
@@ -155,7 +158,7 @@ function generateInsights(data) {
       icon: '📊',
       title: 'Aşırı Viral Sapma',
       description:
-        'En çok izlenen videonuz ortalamanızın 10 katından fazla. Bu tür büyük sapmalar genellikle hesabın hedef kitlesini karıştırır.',
+        `En çok izlenen videonuz (${topVideoViews.toLocaleString('tr-TR')}) ortalamanızın ${Math.round(viralRatio)} katı. Bu tür büyük sapmalar hesabın hedef kitlesini karıştırabilir. Tutan formatta ama nişinize uygun içerikler üretin.`,
       priority: 8,
     });
   }
@@ -168,7 +171,7 @@ function generateInsights(data) {
       icon: '🔥',
       title: 'Yüksek Üretim Frekansı',
       description:
-        'İçerik üretim hızınız çok iyi. Algoritma sizi aktif üretici olarak değerlendiriyor.',
+        `Haftada ${weeklyContent} içerik paylaşıyorsunuz — harika! Algoritma sizi aktif üretici olarak değerlendiriyor. Bu tutarlılığı koruyun.`,
       priority: 5,
     });
   }
@@ -181,60 +184,60 @@ function generateInsights(data) {
       icon: '🔖',
       title: 'Yüksek Kaydetme Performansı',
       description:
-        'Kaydetme oranınız çok yüksek. İçerikleriniz uzun vadeli değer taşıyor ve kullanıcılar tekrar dönmek istiyor.',
+        `Kaydetme oranınız %${saveRate} — bu çok güçlü. İçerikleriniz uzun vadeli değer taşıyor. Eğitici, "nasıl yapılır" ve referans içeriklere devam edin.`,
       priority: 6,
     });
   }
 
   // ─── 12. Düşük İçerik Değeri Sinyali ───────────────────────────────
-  if (saveRate < 1) {
+  if (saveRate < 1 && avgReelsViews > 1000) {
     insights.push({
       id: generateId(),
       type: 'warning',
       icon: '📋',
       title: 'Düşük İçerik Değeri Sinyali',
       description:
-        'Kaydetme oranınız düşük. İçerikleriniz anlık tüketiliyor ama uzun vadeli değer sunmuyor olabilir. Eğitici veya referans içerikler eklemeyi düşünün.',
+        'İçerikleriniz izleniyor ama kaydedilmiyor. Bu, içeriklerinizin anlık tüketilip unutulduğunu gösterir. Eğitici içerikler, listeler, "kaydet ve sonra uygula" formatları ekleyin.',
       priority: 7,
     });
   }
 
   // ─── 13. Güçlü Büyüme Trendi ───────────────────────────────────────
-  if (last14DaysChange > 30) {
+  if (followerGrowthRate > 10) {
     insights.push({
       id: generateId(),
       type: 'positive',
       icon: '📈',
       title: 'Güçlü Büyüme Trendi',
       description:
-        'Son 14 günde güçlü bir yükseliş trendi var. Algoritma içeriklerinizi aktif olarak destekliyor. Bu ivmeyi korumak için tutarlı paylaşım yapın.',
+        `Son 30 günde %${followerGrowthRate} büyüme sağlamışsınız! Algoritma içeriklerinizi aktif olarak destekliyor. Bu ivmeyi korumak için tutarlı ve kaliteli paylaşım yapın.`,
       priority: 7,
     });
   }
 
-  // ─── 14. İçerik-Takipçi Uyumu Güçlü ────────────────────────────────
-  if (alignmentRatio > 0.7) {
-    insights.push({
-      id: generateId(),
-      type: 'positive',
-      icon: '🎯',
-      title: 'İçerik-Takipçi Uyumu Güçlü',
-      description:
-        'En çok takipçi getiren videonuz aynı zamanda en çok izlenen videolarınızdan biri. Bu, içerik stratejinizin doğru kitleye ulaştığını gösterir.',
-      priority: 6,
-    });
-  }
-
-  // ─── 15. İçerik-Takipçi Uyumsuzluğu ────────────────────────────────
-  if (alignmentRatio < 0.2 && topVideoViews > 0) {
+  // ─── 14. Hook Stratejisi Gerekli ───────────────────────────────────
+  if (avgReelsViews < followerCount * 0.1 && weeklyContent >= 3) {
     insights.push({
       id: generateId(),
       type: 'warning',
-      icon: '🔀',
-      title: 'İçerik-Takipçi Uyumsuzluğu',
+      icon: '🎣',
+      title: 'Hook (Giriş Kancası) Stratejisi Gerekli',
       description:
-        'En çok izlenen videonuz ile en çok takipçi getiren videonuz çok farklı. Viral olan içerikler takipçiye dönüşmüyor olabilir.',
-      priority: 7,
+        'İzlenme sayılarınız takipçi sayınıza göre düşük. İlk 1-2 saniyedeki hook (kanca) yeterince güçlü olmayabilir. "Bunu bilmiyordun...", "3 saniyede öğren", "Kaydırma!" gibi dikkat çekici girişler deneyin.',
+      priority: 8,
+    });
+  }
+
+  // ─── 15. Yorum Etkileşimi Düşük ───────────────────────────────────
+  if (avgComments < avgLikes * 0.02 && avgLikes > 100) {
+    insights.push({
+      id: generateId(),
+      type: 'info',
+      icon: '💬',
+      title: 'Yorum Oranı Düşük',
+      description:
+        'Beğeni alıyorsunuz ama yorum oranınız düşük. İçeriklerinizin sonuna "Sen ne düşünüyorsun?", "Yorumlarda söyle" gibi soru-cevap CTA\'ları ekleyerek yorum oranınızı artırabilirsiniz.',
+      priority: 5,
     });
   }
 
@@ -246,7 +249,7 @@ function generateInsights(data) {
       icon: '⚡',
       title: 'Etkileşim-Frekans Dengesi Mükemmel',
       description:
-        'Hem yüksek etkileşim oranı hem de tutarlı içerik üretimi sağlıyorsunuz. Bu kombinasyon algoritmanın hesabınızı öne çıkarması için ideal koşulları oluşturuyor.',
+        'Hem yüksek etkileşim hem tutarlı üretim var. Bu kombinasyon algoritmanın hesabınızı öne çıkarması için ideal koşulları oluşturuyor.',
       priority: 6,
     });
   }
@@ -259,7 +262,7 @@ function generateInsights(data) {
       icon: '⏳',
       title: 'Aşırı Üretim, Düşük Etkileşim',
       description:
-        'Çok fazla içerik üretiyorsunuz ama etkileşim oranınız düşük. Kalite-kantite dengesini gözden geçirin; daha az ama daha kaliteli içerik paylaşmayı deneyin.',
+        'Çok fazla içerik üretiyorsunuz ama etkileşim oranı düşük. Kalite > kantite! Daha az ama daha kaliteli içerik paylaşmayı deneyin. Her içeriği "bunu paylaşmama değer mi?" diye sorgulayın.',
       priority: 7,
     });
   }
@@ -277,15 +280,15 @@ function generateInsights(data) {
     });
   }
 
-  // ─── 19. Düşük Paylaşım Potansiyeli ────────────────────────────────
-  if (shareRate < 0.5 && saveRate < 1) {
+  // ─── 19. Düşük Etkileşim Sinyalleri ────────────────────────────────
+  if (shareRate < 0.5 && saveRate < 1 && engagementRate < 1.5) {
     insights.push({
       id: generateId(),
       type: 'critical',
       icon: '🚫',
       title: 'Düşük Etkileşim Sinyalleri',
       description:
-        'Hem paylaşım hem kaydetme oranlarınız düşük. İçerikleriniz kullanıcılarda yeterli etki bırakmıyor olabilir. İçerik formatınızı ve değer önerinizi yeniden değerlendirin.',
+        'Paylaşım, kaydetme ve etkileşim oranlarınızın hepsi düşük. İçerik formatınızı tamamen değiştirmeyi düşünün. Trend sesleri, popüler formatlar ve duygu tetikleyen başlıklar deneyin.',
       priority: 9,
     });
   }
@@ -298,7 +301,7 @@ function generateInsights(data) {
       icon: '🏆',
       title: 'Güçlü Takipçi Kazanımı',
       description:
-        `Son 30 günde ${followerGrowth.toLocaleString('tr-TR')} yeni takipçi kazanmışsınız. Bu büyüme hızı, hesabınızın keşfet sayfasında aktif olarak gösterildiğini işaret ediyor.`,
+        `Son 30 günde ${followerGrowth.toLocaleString('tr-TR')} yeni takipçi kazanmışsınız! Bu büyüme, keşfet sayfasında aktif olarak gösterildiğinizi işaret ediyor.`,
       priority: 6,
     });
   }
@@ -324,22 +327,35 @@ function generateInsights(data) {
       icon: '🎬',
       title: 'İçerik Formatı Çeşitlendirme Önerisi',
       description:
-        'İçerikleriniz tutarlı performans gösteriyor ancak viral çıkış potansiyeliniz düşük. Farklı formatlar (duet, trend ses, behind-the-scenes) deneyerek algoritma çeşitliliğinizi artırın.',
+        'İçerikleriniz tutarlı performans gösteriyor ancak viral çıkış potansiyeliniz düşük. Farklı formatlar (duet, trend ses, behind-the-scenes, POV) deneyerek algoritma çeşitliliğinizi artırın.',
       priority: 5,
     });
   }
 
-  // ─── 23. Paylaşım Zamanlaması ──────────────────────────────────────
-  if (last14DaysChange < 0 && weeklyContent >= 4) {
-    insights.push({
-      id: generateId(),
-      type: 'info',
-      icon: '🕐',
-      title: 'Paylaşım Zamanlaması Optimizasyonu',
-      description:
-        'İçerik üretim frekansınız yeterli ancak performans düşüşü yaşıyorsunuz. Paylaşım saatlerinizi Instagram Insights\'tan kontrol edin — kitlenizin en aktif olduğu saatlerde paylaşım yapın.',
-      priority: 6,
-    });
+  // ─── 23. Beğeni-İzlenme Oranı Analizi ─────────────────────────────
+  if (avgLikes > 0 && avgReelsViews > 0) {
+    const likeToViewRate = (avgLikes / avgReelsViews) * 100;
+    if (likeToViewRate > 10) {
+      insights.push({
+        id: generateId(),
+        type: 'positive',
+        icon: '❤️',
+        title: 'Yüksek Beğeni-İzlenme Oranı',
+        description:
+          `İzleyenlerin %${likeToViewRate.toFixed(1)}'i beğeni bırakıyor. Bu, içeriklerinizin izleyicilerde güçlü bir etki bıraktığını gösteriyor. Harika iş!`,
+        priority: 5,
+      });
+    } else if (likeToViewRate < 2) {
+      insights.push({
+        id: generateId(),
+        type: 'warning',
+        icon: '💔',
+        title: 'Düşük Beğeni Oranı',
+        description:
+          'İzleyenlerin çok azı beğeni bırakıyor. İçeriklerinizin sonunda "beğenmeyi unutma" hatırlatması yapın veya daha duygusal/etkileyici içerikler üretin.',
+        priority: 6,
+      });
+    }
   }
 
   // ─── 24. Profil Optimizasyonu ───────────────────────────────────────
@@ -350,25 +366,12 @@ function generateInsights(data) {
       icon: '👤',
       title: 'Profil Optimizasyonu Gerekli',
       description:
-        'Yeterli görüntülenme alıyorsunuz ancak takipçiye dönüşüm düşük. Bio yazınızı, profil fotoğrafınızı ve öne çıkan hikayelerinizi optimize ederek dönüşüm oranını artırabilirsiniz.',
+        'Yeterli izlenme alıyorsunuz ama takipçiye dönüşüm düşük. Bio yazınızı, profil fotoğrafınızı ve öne çıkan hikayelerinizi optimize edin. Bio\'nuzda "ne yapıyorsunuz + kime fayda sağlıyorsunuz" net olsun.',
       priority: 7,
     });
   }
 
-  // ─── 25. Hashtag Stratejisi ─────────────────────────────────────────
-  if (last14DaysChange < 5 && engagementRate > 2) {
-    insights.push({
-      id: generateId(),
-      type: 'info',
-      icon: '#️⃣',
-      title: 'Hashtag Stratejisi Değerlendirmesi',
-      description:
-        'Etkileşim oranınız iyi ama keşfet performansı sınırlı. Hashtag stratejinizi gözden geçirin — niş-spesifik, orta hacimli hashtagler kullanarak erişiminizi artırabilirsiniz.',
-      priority: 5,
-    });
-  }
-
-  // ─── 26. İşbirliği Potansiyeli ─────────────────────────────────────
+  // ─── 25. İşbirliği Potansiyeli ─────────────────────────────────────
   if (engagementRate > 3 && followerGrowth > 500) {
     insights.push({
       id: generateId(),
@@ -376,25 +379,25 @@ function generateInsights(data) {
       icon: '🤝',
       title: 'İşbirliği Potansiyeli Yüksek',
       description:
-        'Etkileşim oranınız ve büyüme hızınız, diğer içerik üreticileri ile işbirliği yapmanız için ideal koşulları sağlıyor. Nişinizdeki hesaplarla ortak içerikler planlayın.',
+        'Etkileşim oranınız ve büyümeniz, diğer içerik üreticileri ile işbirliği için ideal. Nişinizdeki hesaplarla ortak Reels, canlı yayın veya takeover içerikler planlayın.',
       priority: 4,
     });
   }
 
-  // ─── 27. İçerik Sütunu Analizi ─────────────────────────────────────
-  if (viralRatio > 5 && alignmentRatio > 0.5) {
+  // ─── 26. Güçlü İçerik Sütunu ──────────────────────────────────────
+  if (viralRatio > 5 && conversionRate > 1) {
     insights.push({
       id: generateId(),
       type: 'positive',
       icon: '🏛️',
       title: 'Güçlü İçerik Sütunu Yapısı',
       description:
-        'Viral potansiyeliniz yüksek ve bu viral içerikler doğru kitleye ulaşıyor. İçerik sütunlarınız (content pillars) doğru kurgulanmış — bu yapıyı koruyun.',
+        'Viral potansiyeliniz yüksek ve viral içerikler aynı zamanda takipçiye dönüşüyor. İçerik sütunlarınız doğru kurgulanmış — bu yapıyı koruyun ve tekrarlayın.',
       priority: 5,
     });
   }
 
-  // ─── 28. Kitle Tutma Sinyali ───────────────────────────────────────
+  // ─── 27. Kitle Tutma Sinyali ───────────────────────────────────────
   if (saveRate > 3 && engagementRate > 3) {
     insights.push({
       id: generateId(),
@@ -402,12 +405,12 @@ function generateInsights(data) {
       icon: '🔗',
       title: 'Güçlü Kitle Tutma Sinyalleri',
       description:
-        'Hem kaydetme hem etkileşim oranlarınız yüksek. Bu, takipçilerinizin içeriklerinize bağlı olduğunu ve geri dönmek istediğini gösteriyor.',
+        'Hem kaydetme hem etkileşim yüksek. Takipçileriniz içeriklerinize bağlı ve geri dönmek istiyor. Bu sadık kitleyi DM grupları veya yakın arkadaş listesiyle daha da yakınlaştırabilirsiniz.',
       priority: 5,
     });
   }
 
-  // ─── 29. Monetizasyon Hazırlığı ────────────────────────────────────
+  // ─── 28. Monetizasyon Hazırlığı ────────────────────────────────────
   if (engagementRate > 3 && followerGrowth > 2000 && saveRate > 2) {
     insights.push({
       id: generateId(),
@@ -415,12 +418,12 @@ function generateInsights(data) {
       icon: '💰',
       title: 'Monetizasyon İçin Hazır',
       description:
-        'Etkileşim, büyüme ve kaydetme metrikleriniz, hesabınızın monetizasyona hazır olduğunu gösteriyor. Marka işbirlikleri, sponsorluklar veya dijital ürün satışı düşünebilirsiniz.',
+        'Etkileşim, büyüme ve kaydetme metrikleriniz monetizasyona hazır olduğunuzu gösteriyor. Marka işbirlikleri, sponsorluklar, dijital ürün satışı veya mentorluk programı düşünebilirsiniz.',
       priority: 4,
     });
   }
 
-  // ─── 30. Marka İşbirliği Potansiyeli ──────────────────────────────
+  // ─── 29. Marka İşbirliği Potansiyeli ──────────────────────────────
   if (engagementRate > 4 && weeklyContent >= 4 && saveRate > 2) {
     insights.push({
       id: generateId(),
@@ -428,25 +431,25 @@ function generateInsights(data) {
       icon: '🏷️',
       title: 'Yüksek Marka İşbirliği Potansiyeli',
       description:
-        'Tutarlı içerik üretimi, yüksek etkileşim ve kaydetme oranlarınız sizi markalar için cazip bir işbirliği ortağı yapıyor. Medya kitinizi hazırlayın.',
+        'Tutarlı üretim, yüksek etkileşim ve kaydetme oranları sizi markalar için cazip yapıyor. Bir medya kiti hazırlayıp markalara ulaşın.',
       priority: 4,
     });
   }
 
-  // ─── 31. Algoritma Favori Sinyalleri ───────────────────────────────
-  if (last14DaysChange > 20 && shareRate > 1.5 && saveRate > 2) {
+  // ─── 30. Algoritma Favori Sinyalleri ───────────────────────────────
+  if (followerGrowthRate > 5 && shareRate > 1.5 && saveRate > 2) {
     insights.push({
       id: generateId(),
       type: 'positive',
       icon: '✨',
       title: 'Algoritma Tarafından Destekleniyorsunuz',
       description:
-        'Görüntülenme artışı, paylaşım ve kaydetme oranlarınız, Instagram algoritmasının içeriklerinizi aktif olarak öne çıkardığını gösteriyor. Bu momentum kritik — tutarlılığı koruyun.',
+        'Büyüme hızınız, paylaşım ve kaydetme oranlarınız, algoritmanın sizi aktif olarak öne çıkardığını gösteriyor. Bu momentum kritik — tutarlılığı koruyun!',
       priority: 7,
     });
   }
 
-  // ─── 32. Topluluk Büyütme Stratejisi ──────────────────────────────
+  // ─── 31. Topluluk Büyütme Stratejisi ──────────────────────────────
   if (engagementRate > 2 && followerGrowth < 500 && weeklyContent >= 3) {
     insights.push({
       id: generateId(),
@@ -454,25 +457,25 @@ function generateInsights(data) {
       icon: '🌱',
       title: 'Topluluk Büyütme Fırsatı',
       description:
-        'Etkileşim oranınız sağlıklı ama takipçi büyümeniz yavaş. Yorumlara aktif yanıt vererek, hikaye etkileşimlerini artırarak ve DM ile bağlantı kurarak organik topluluğunuzu büyütün.',
+        'Etkileşim oranınız sağlıklı ama büyüme yavaş. Yorumlara aktif yanıt verin, hikaye etkileşimlerini artırın, nişinizdeki hesapların yorumlarına değerli katkılar bırakın.',
       priority: 5,
     });
   }
 
-  // ─── 33. Orta Düzey Performans ────────────────────────────────────
-  if (last14DaysChange > -5 && last14DaysChange < 10 && engagementRate > 1 && engagementRate < 3) {
+  // ─── 32. Orta Düzey Performans ────────────────────────────────────
+  if (followerGrowthRate > -1 && followerGrowthRate < 5 && engagementRate > 1 && engagementRate < 3) {
     insights.push({
       id: generateId(),
       type: 'info',
       icon: '📊',
       title: 'Stabil Performans — Büyüme Potansiyeli Mevcut',
       description:
-        'Hesabınız stabil bir performans sergiliyor ancak büyüme ivmesi düşük. Mevcut stratejinize yeni formatlar veya trendler ekleyerek çıkış noktası oluşturabilirsiniz.',
+        'Hesabınız stabil ama büyüme ivmesi düşük. Mevcut stratejinize trend formatlar, viral ses kullanımı veya kontroversiyel konular ekleyerek çıkış noktası oluşturabilirsiniz.',
       priority: 4,
     });
   }
 
-  // ─── 34. Yüksek Görüntülenme Başarısı ────────────────────────────
+  // ─── 33. Yüksek Görüntülenme ────────────────────────────────────
   if (totalViews > 100000) {
     insights.push({
       id: generateId(),
@@ -480,12 +483,12 @@ function generateInsights(data) {
       icon: '👁️',
       title: 'Güçlü Erişim Performansı',
       description:
-        `Son 30 günde ${totalViews.toLocaleString('tr-TR')} görüntülenme elde etmişsiniz. Bu, içeriklerinizin geniş bir kitleye ulaştığını gösteriyor.`,
+        `Son 30 günde ${totalViews.toLocaleString('tr-TR')} görüntülenme — bu çok iyi! İçerikleriniz geniş bir kitleye ulaşıyor.`,
       priority: 5,
     });
   }
 
-  // ─── 35. Düşük Görüntülenme Uyarısı ──────────────────────────────
+  // ─── 34. Düşük Görüntülenme Uyarısı ──────────────────────────────
   if (totalViews < 5000 && weeklyContent >= 3) {
     insights.push({
       id: generateId(),
@@ -493,8 +496,33 @@ function generateInsights(data) {
       icon: '🔇',
       title: 'Düşük Erişim Uyarısı',
       description:
-        'İçerik üretiyorsunuz ama görüntülenme sayılarınız düşük. Keşfet algoritmasının sizi fark etmesi için hook stratejinizi güçlendirin ve trend sesleri kullanın.',
+        'İçerik üretiyorsunuz ama görüntülenme çok düşük. Hook stratejinizi güçlendirin, trend sesleri kullanın ve paylaşım saatlerinizi optimize edin. İlk 3 saniye her şeyi belirler!',
       priority: 8,
+    });
+  }
+
+  // ─── 35. Kaydetme/Paylaşım Dengesizliği ──────────────────────────
+  if (avgSaves > avgShares * 3 && avgShares > 0) {
+    insights.push({
+      id: generateId(),
+      type: 'info',
+      icon: '⚖️',
+      title: 'Eğitici İçerik Profili',
+      description:
+        'Kaydetme sayınız paylaşım sayınızın çok üstünde. İçerikleriniz eğitici/bilgilendirici ağırlıklı. Viral büyüme için duygu tetikleyen, tartışma yaratan veya eğlenceli formatlar da ekleyin.',
+      priority: 4,
+    });
+  }
+
+  if (avgShares > avgSaves * 2 && avgSaves > 0) {
+    insights.push({
+      id: generateId(),
+      type: 'info',
+      icon: '📤',
+      title: 'Viral İçerik Profili',
+      description:
+        'Paylaşım sayınız kaydetmeden çok yüksek. İçerikleriniz viral yayılıma uygun ama uzun vadeli değer düşük olabilir. Hem paylaşılabilir hem kaydedilebilir "combo" formatlar deneyin.',
+      priority: 4,
     });
   }
 
@@ -507,7 +535,7 @@ function generateInsights(data) {
   const minInsights = 8;
   const maxInsights = 12;
 
-  // If we have fewer than min, pad with a fallback general insight
+  // If we have fewer than min, pad with fallback insights
   if (insights.length < minInsights) {
     const fallbackInsights = [
       {
@@ -534,7 +562,7 @@ function generateInsights(data) {
         icon: '🔄',
         title: 'Tutarlılık Anahtardır',
         description:
-          'Algoritma, tutarlı içerik üreticilerini ödüllendirir. Belirli günlerde, belirli saatlerde paylaşım yaparak algoritmada güven oluşturun.',
+          'Algoritma tutarlı üreticileri ödüllendirir. Belirli günlerde, belirli saatlerde paylaşım yaparak algoritmada güven oluşturun.',
         priority: 2,
       },
       {

@@ -12,7 +12,7 @@ export default function Footer() {
         
         <div className="flex flex-col items-center justify-center text-center">
           <p className="text-slate-400 font-medium mb-4">
-            Bu analiz sistemi bir <span className="text-neon-purple font-bold">@sosyalsam</span> projesidir.
+            Bu analiz sistemi bir <a href="https://www.instagram.com/sosyalsam/" target="_blank" rel="noopener noreferrer" className="text-neon-purple font-bold hover:underline hover:text-white transition-colors">@sosyalsam</a> projesidir.
           </p>
           
           <div className="flex gap-4 text-sm text-slate-600">

@@ -1,7 +1,7 @@
 /**
  * Score Calculator Service
  *
- * Computes 5 key performance scores (0-100) from raw Instagram metrics:
+ * Computes 5 key performance scores (0-100) from Instagram metrics:
  *   1. contentScore       — content quality & consistency
  *   2. algorithmScore     — algorithm favor / keşfet performance
  *   3. followerConversionScore — views → follower conversion efficiency
@@ -67,44 +67,43 @@ function calculateContentScore({ weeklyContent, saveRate, shareRate, engagementR
 // ---------------------------------------------------------------------------
 
 /**
- * Evaluates how well the account is performing in the Instagram algorithm
- * (keşfet / explore page) based on recent trend data.
+ * Evaluates how well the account is performing in the Instagram algorithm.
+ * Uses follower growth rate and view-to-follower ratio as proxy signals.
  */
-function calculateAlgorithmScore({ last14DaysChange, totalViews, followerGrowth, avgReelsViews }) {
+function calculateAlgorithmScore({ followerGrowthRate, totalViews, followerCount, avgReelsViews, engagementRate, shareRate, saveRate }) {
   let base = 0;
 
-  // 14-day trend is the primary signal
-  if (last14DaysChange > 50) {
+  // Follower growth rate as primary trend signal
+  if (followerGrowthRate > 20) {
     base = 85;
-  } else if (last14DaysChange > 30) {
-    base = 75;
-  } else if (last14DaysChange > 20) {
-    base = 65;
-  } else if (last14DaysChange > 10) {
-    base = 55;
-  } else if (last14DaysChange > 0) {
-    base = 45;
-  } else if (last14DaysChange > -10) {
-    base = 30;
-  } else if (last14DaysChange > -20) {
-    base = 18;
+  } else if (followerGrowthRate > 10) {
+    base = 72;
+  } else if (followerGrowthRate > 5) {
+    base = 60;
+  } else if (followerGrowthRate > 2) {
+    base = 48;
+  } else if (followerGrowthRate > 0) {
+    base = 35;
+  } else if (followerGrowthRate > -2) {
+    base = 22;
   } else {
-    base = 8;
+    base = 10;
   }
 
   // Views-to-follower ratio — healthy accounts have high reach relative to size
-  const viewsPerFollower = followerGrowth > 0
-    ? totalViews / followerGrowth
-    : totalViews > 0 ? 5 : 0; // fallback heuristic
+  const viewsPerFollower = followerCount > 0
+    ? totalViews / followerCount
+    : totalViews > 0 ? 5 : 0;
 
   if (viewsPerFollower > 20) base += 10;
-  else if (viewsPerFollower > 10) base += 6;
-  else if (viewsPerFollower > 5) base += 3;
+  else if (viewsPerFollower > 10) base += 7;
+  else if (viewsPerFollower > 5) base += 4;
+  else if (viewsPerFollower > 2) base += 2;
 
-  // Average reels performance as a secondary signal
-  if (avgReelsViews > 50000) base += 5;
-  else if (avgReelsViews > 10000) base += 3;
-  else if (avgReelsViews > 5000) base += 1;
+  // Engagement signals boost algorithm favor
+  if (engagementRate > 4) base += 4;
+  if (shareRate > 2) base += 3;
+  if (saveRate > 3) base += 3;
 
   return formatScore(clamp(base, 0, 100));
 }
@@ -115,9 +114,8 @@ function calculateAlgorithmScore({ last14DaysChange, totalViews, followerGrowth,
 
 /**
  * Measures how efficiently views convert into new followers.
- * Also considers alignment between best-performing and follower-driving content.
  */
-function calculateFollowerConversionScore({ followerGrowth, totalViews, bestFollowerVideo, topVideoViews }) {
+function calculateFollowerConversionScore({ followerGrowth, totalViews, followerCount, followerGrowthRate }) {
   const conversionRate = calculatePercentage(followerGrowth, totalViews);
   let base = 0;
 
@@ -136,22 +134,14 @@ function calculateFollowerConversionScore({ followerGrowth, totalViews, bestFoll
     base = 10;
   }
 
-  // Content-follower alignment — does the viral content actually bring followers?
-  if (topVideoViews > 0) {
-    const alignmentRatio = bestFollowerVideo / topVideoViews;
-
-    if (alignmentRatio > 0.7) {
-      base += 12; // Very well aligned
-    } else if (alignmentRatio > 0.4) {
-      base += 6;  // Moderate alignment
-    } else if (alignmentRatio < 0.2) {
-      base -= 5;  // Viral content not converting
-    }
-  }
-
   // Absolute follower growth bonus
-  if (followerGrowth > 5000) base += 5;
+  if (followerGrowth > 5000) base += 8;
+  else if (followerGrowth > 2000) base += 5;
   else if (followerGrowth > 1000) base += 3;
+
+  // Growth rate bonus
+  if (followerGrowthRate > 10) base += 5;
+  else if (followerGrowthRate > 5) base += 3;
 
   return formatScore(clamp(base, 0, 100));
 }
@@ -164,30 +154,30 @@ function calculateFollowerConversionScore({ followerGrowth, totalViews, bestFoll
  * Predicts the account's potential for viral breakout content
  * based on top-video spike vs average, share rate, and engagement.
  */
-function calculateViralPotentialScore({ topVideoViews, avgReelsViews, shareRate, engagementRate, followerGrowth, totalViews }) {
-  const viralRatio = avgReelsViews > 0 ? topVideoViews / avgReelsViews : 1;
+function calculateViralPotentialScore({ topVideoViews, avgReelsViews, shareRate, engagementRate, followerGrowth, totalViews, viralRatio }) {
+  const ratio = viralRatio || (avgReelsViews > 0 ? topVideoViews / avgReelsViews : 1);
   let base = 0;
 
   // Viral ratio tiers
-  if (viralRatio > 10) {
-    base = 80; // Very high — but may indicate niche misalignment
-  } else if (viralRatio > 7) {
+  if (ratio > 10) {
+    base = 80;
+  } else if (ratio > 7) {
     base = 72;
-  } else if (viralRatio > 5) {
+  } else if (ratio > 5) {
     base = 60;
-  } else if (viralRatio > 3) {
+  } else if (ratio > 3) {
     base = 48;
-  } else if (viralRatio > 2) {
+  } else if (ratio > 2) {
     base = 35;
   } else {
     base = 20;
   }
 
-  // Penalize extreme spikes that don't align with niche (heuristic)
-  if (viralRatio > 10) {
+  // Penalize extreme spikes that don't convert
+  if (ratio > 10) {
     const conversionRate = calculatePercentage(followerGrowth, totalViews);
     if (conversionRate < 0.5) {
-      base -= 10; // High views but not converting — likely niche-misaligned
+      base -= 10;
     }
   }
 
@@ -228,8 +218,8 @@ function calculateOverallHealth(contentScore, algorithmScore, conversionScore, v
 // ---------------------------------------------------------------------------
 
 /**
- * Calculate all five scores from the raw input data.
- * @param {object} data — validated input metrics
+ * Calculate all five scores from the enriched input data.
+ * @param {object} data — enriched input metrics (with calculated rates)
  * @returns {{ contentScore, algorithmScore, followerConversionScore, viralPotentialScore, overallHealth }}
  */
 function calculateAllScores(data) {

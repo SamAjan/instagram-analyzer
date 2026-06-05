@@ -30,7 +30,7 @@ function generateRecommendations(scores, data) {
     saveRate,
     shareRate,
     engagementRate,
-    last14DaysChange,
+    followerGrowthRate,
     followerGrowth,
     totalViews,
     niche,
@@ -90,7 +90,7 @@ function generateRecommendations(scores, data) {
     });
   }
 
-  if (last14DaysChange < -10) {
+  if (followerGrowthRate < 0) {
     recommendations.push({
       id: generateId(),
       title: 'Performans Düşüşü Kurtarma Planı',

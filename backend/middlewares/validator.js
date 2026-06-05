@@ -1,7 +1,7 @@
 /**
  * Input validation middleware for the POST /api/analyze endpoint.
  *
- * Validates all 12 input fields using express-validator.
+ * Validates all input fields using express-validator.
  * Returns Turkish error messages when validation fails.
  */
 
@@ -23,10 +23,14 @@ const analyzeValidationRules = [
     .notEmpty().withMessage('Niş alanı zorunludur.')
     .isString().withMessage('Niş alanı metin olmalıdır.'),
 
+  body('followerCount')
+    .notEmpty().withMessage('Toplam takipçi sayısı zorunludur.')
+    .isNumeric().withMessage('Toplam takipçi sayısı sayısal bir değer olmalıdır.')
+    .custom((v) => Number(v) >= 0).withMessage('Toplam takipçi sayısı 0 veya daha büyük olmalıdır.'),
+
   body('followerGrowth')
     .notEmpty().withMessage('Takipçi artışı zorunludur.')
-    .isNumeric().withMessage('Takipçi artışı sayısal bir değer olmalıdır.')
-    .custom((v) => Number(v) >= 0).withMessage('Takipçi artışı 0 veya daha büyük olmalıdır.'),
+    .isNumeric().withMessage('Takipçi artışı sayısal bir değer olmalıdır.'),
 
   body('totalViews')
     .notEmpty().withMessage('Toplam görüntülenme zorunludur.')
@@ -43,35 +47,30 @@ const analyzeValidationRules = [
     .isNumeric().withMessage('Ortalama reels izlenmesi sayısal bir değer olmalıdır.')
     .custom((v) => Number(v) >= 0).withMessage('Ortalama reels izlenmesi 0 veya daha büyük olmalıdır.'),
 
-  body('bestFollowerVideo')
-    .notEmpty().withMessage('En çok takipçi getiren video görüntülenmesi zorunludur.')
-    .isNumeric().withMessage('En çok takipçi getiren video görüntülenmesi sayısal bir değer olmalıdır.')
-    .custom((v) => Number(v) >= 0).withMessage('Bu değer 0 veya daha büyük olmalıdır.'),
-
-  body('last14DaysChange')
-    .notEmpty().withMessage('Son 14 gün görüntülenme değişimi zorunludur.')
-    .isNumeric().withMessage('Son 14 gün görüntülenme değişimi sayısal bir değer olmalıdır.'),
-    // Note: last14DaysChange CAN be negative — no min-0 constraint
-
-  body('engagementRate')
-    .notEmpty().withMessage('Etkileşim oranı zorunludur.')
-    .isNumeric().withMessage('Etkileşim oranı sayısal bir değer olmalıdır.')
-    .custom((v) => Number(v) >= 0).withMessage('Etkileşim oranı 0 veya daha büyük olmalıdır.'),
-
   body('weeklyContent')
     .notEmpty().withMessage('Haftalık içerik sayısı zorunludur.')
     .isNumeric().withMessage('Haftalık içerik sayısı sayısal bir değer olmalıdır.')
     .custom((v) => Number(v) >= 0).withMessage('Haftalık içerik sayısı 0 veya daha büyük olmalıdır.'),
 
-  body('saveRate')
-    .notEmpty().withMessage('Kaydetme oranı zorunludur.')
-    .isNumeric().withMessage('Kaydetme oranı sayısal bir değer olmalıdır.')
-    .custom((v) => Number(v) >= 0).withMessage('Kaydetme oranı 0 veya daha büyük olmalıdır.'),
+  body('avgLikes')
+    .notEmpty().withMessage('Ortalama beğeni sayısı zorunludur.')
+    .isNumeric().withMessage('Ortalama beğeni sayısı sayısal bir değer olmalıdır.')
+    .custom((v) => Number(v) >= 0).withMessage('Ortalama beğeni sayısı 0 veya daha büyük olmalıdır.'),
 
-  body('shareRate')
-    .notEmpty().withMessage('Paylaşım oranı zorunludur.')
-    .isNumeric().withMessage('Paylaşım oranı sayısal bir değer olmalıdır.')
-    .custom((v) => Number(v) >= 0).withMessage('Paylaşım oranı 0 veya daha büyük olmalıdır.'),
+  body('avgComments')
+    .notEmpty().withMessage('Ortalama yorum sayısı zorunludur.')
+    .isNumeric().withMessage('Ortalama yorum sayısı sayısal bir değer olmalıdır.')
+    .custom((v) => Number(v) >= 0).withMessage('Ortalama yorum sayısı 0 veya daha büyük olmalıdır.'),
+
+  body('avgShares')
+    .notEmpty().withMessage('Ortalama paylaşım sayısı zorunludur.')
+    .isNumeric().withMessage('Ortalama paylaşım sayısı sayısal bir değer olmalıdır.')
+    .custom((v) => Number(v) >= 0).withMessage('Ortalama paylaşım sayısı 0 veya daha büyük olmalıdır.'),
+
+  body('avgSaves')
+    .notEmpty().withMessage('Ortalama kaydetme sayısı zorunludur.')
+    .isNumeric().withMessage('Ortalama kaydetme sayısı sayısal bir değer olmalıdır.')
+    .custom((v) => Number(v) >= 0).withMessage('Ortalama kaydetme sayısı 0 veya daha büyük olmalıdır.'),
 ];
 
 // ---------------------------------------------------------------------------
