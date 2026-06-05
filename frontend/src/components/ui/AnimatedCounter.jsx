@@ -4,7 +4,7 @@ import { motion, useMotionValue, useTransform, animate, useInView } from 'framer
 export default function AnimatedCounter({ end, duration = 2000, prefix = '', suffix = '', decimals = 0, className = '' }) {
   const [hasAnimated, setHasAnimated] = useState(false);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const isInView = useInView(ref, { once: true, margin: "0px" });
   
   const count = useMotionValue(0);
   const rounded = useTransform(count, (latest) => {

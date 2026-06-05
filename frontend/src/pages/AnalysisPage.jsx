@@ -20,12 +20,12 @@ export default function AnalysisPage() {
       // API call
       const response = await analyzeAccount(formData);
       
-      // Artificial delay to let the loading animation run for at least a bit
+      // Reklam gösterimi ve daha gerçekçi bir "hesaplama" hissi için 12 saniye yapay bekleme
       setTimeout(() => {
         setResults(response.data);
         setStatus('results');
         window.scrollTo(0, 0);
-      }, 2000);
+      }, 12000);
       
     } catch (error) {
       setErrorMessage(error.message);

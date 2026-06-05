@@ -15,13 +15,7 @@ export default function Footer() {
             Bu analiz sistemi bir <a href="https://www.instagram.com/sosyalsam/" target="_blank" rel="noopener noreferrer" className="text-neon-purple font-bold hover:underline hover:text-white transition-colors">@sosyalsam</a> projesidir.
           </p>
           
-          <div className="flex gap-4 text-sm text-slate-600">
-            <a href="#" className="hover:text-white transition-colors">Gizlilik Politikası</a>
-            <span>•</span>
-            <a href="#" className="hover:text-white transition-colors">Kullanım Koşulları</a>
-            <span>•</span>
-            <a href="#" className="hover:text-white transition-colors">İletişim</a>
-          </div>
+
           
           <p className="text-slate-600 text-xs mt-8">
             © {new Date().getFullYear()} InstaAnaliz. Tüm hakları saklıdır. Bu platform Instagram'ın resmi bir parçası değildir.

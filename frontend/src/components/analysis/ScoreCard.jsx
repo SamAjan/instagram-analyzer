@@ -22,9 +22,9 @@ export default function ScoreCard({ title, score, label, color, icon: Icon, dela
       className="p-6 flex flex-col items-center justify-center text-center"
     >
       <div className="mb-4">
-        <CircularProgress value={score.score || score} size={100} strokeWidth={8} color={activeColor} showLabel={false} />
+        <CircularProgress value={score?.score ?? score} size={100} strokeWidth={8} color={activeColor} showLabel={false} />
         <div className="absolute inset-0 flex items-center justify-center text-3xl font-display font-bold mt-[-24px]">
-          <AnimatedCounter end={score.score || score} />
+          <AnimatedCounter end={score?.score ?? score} />
         </div>
       </div>
       
